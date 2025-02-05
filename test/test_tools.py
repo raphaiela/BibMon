@@ -8,6 +8,7 @@ Created on Thu Sep  3 23:38:16 2020
 
 import bibmon
 import pandas as pd
+from bibmon._bibmon_tools import detect_outliers_iqr
 
 def test_complete_analysis():
     
@@ -61,3 +62,28 @@ def test_complete_analysis():
                             fault_end = '2018-01-02 09:00:00') 
     
     model.plot_importances()                                                                             
+
+def test_detect_outliers_iqr():
+    # lower_bound=4 e upper_bound=10
+    base_data = [6.25] * 100 + [7.75] * 100
+    test_data = base_data + [2, 12, 6, 1]
+    df = pd.DataFrame({'col1': test_data})
+    df_outliers = detect_outliers_iqr(df, cols=['col1'])
+    
+    # Índices dos casos de teste (últimas 4 linhas)
+    ct1_index = len(base_data)     # 200
+    ct2_index = len(base_data) + 1 # 201
+    ct3_index = len(base_data) + 2 # 202
+    ct4_index = len(base_data) + 3 # 203
+    
+    # CT1: Valor 2 (abaixo de 4) → outlier (1)
+    assert df_outliers.loc[ct1_index, 'col1'] == 1, "CT1 falhou"
+    
+    # CT2: Valor 12 (acima de 10) → outlier (1)
+    assert df_outliers.loc[ct2_index, 'col1'] == 1, "CT2 falhou"
+    
+    # CT3: Valor 6 (entre 4 e 10) → não outlier (0)
+    assert df_outliers.loc[ct3_index, 'col1'] == 0, "CT3 falhou"
+    
+    # CT4: Valor 1 (abaixo de 4) → outlier (1)
+    assert df_outliers.loc[ct4_index, 'col1'] == 1, "CT4 falhou"
